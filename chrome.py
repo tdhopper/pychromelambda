@@ -29,8 +29,8 @@ DEFAULT_ARGS = (
 
 
 def get_driver(
-    binary_location="./bin/headless-chromium",
-    chrome_driver="./bin/chromedriver",
+    binary_location="/opt/headless-chromium",
+    chrome_driver="/opt/chromedriver",
     arguments=DEFAULT_ARGS,
 ):
     options = webdriver.ChromeOptions()

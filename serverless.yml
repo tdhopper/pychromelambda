@@ -17,10 +17,21 @@ custom:
 functions:
   screenshot:
     handler: chrome.screenshot
+    exclude:
+     - ./bin
+     - ./node_modules
+     - "*.zip"
     events:
       - http:
           path: img
-          method: get
+          method: post
+          private: false
+    layers:
+       - {Ref: ChromeLambdaLayer}
+
+layers:
+  chrome:
+    path: ./bin
 
 plugins:
   - serverless-python-requirements

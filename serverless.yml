@@ -1,0 +1,21 @@
+service: pychromelambda
+
+provider:
+  name: aws
+  runtime: python3.6
+  profile: personal
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+functions:
+  screenshot:
+    handler: chrome.screenshot
+    events:
+      - http:
+          path: img
+          method: get
+
+plugins:
+  - serverless-python-requirements

@@ -13,6 +13,9 @@ provider:
 custom:
   pythonRequirements:
     dockerizePip: true
+    layer: true
+    useDownloadCache: true
+    useStaticCache: true
 
 functions:
   screenshot:
@@ -28,6 +31,7 @@ functions:
           private: false
     layers:
        - {Ref: ChromeLambdaLayer}
+       - {Ref: PythonRequirementsLambdaLayer}
 
 layers:
   chrome:

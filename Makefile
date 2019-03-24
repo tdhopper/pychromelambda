@@ -3,6 +3,9 @@
 deploy: bin
 	serverless deploy
 
+generate_images:
+	./queue_images.sh
+
 bin: bin/chromedriver bin/headless-chromium
 
 bin/chromedriver:

@@ -10,8 +10,6 @@ DEBUG = False
 BASEPATH = "pychromelambda"
 SCREENSHOT = "/tmp/img.png"
 ELEMENT = "/tmp/img_cropped.png"
-URL = "https://en.wikipedia.org/wiki/Main_Page"
-ELEMENT_ID = "mp-left"
 DEFAULT_ARGS = (
     "--headless",
     "--disable-gpu",
@@ -43,16 +41,43 @@ def get_driver(
 
 
 def screenshot(events=None, context=None):
-    url = (events or {}).get("queryStringParameters", {}).get("url") or URL
-    element_id = (events or {}).get("queryStringParameters", {}).get(
-        "element_id"
-    ) or ELEMENT_ID
-    XPATH = f"//*[@id='{element_id}']"
+    for event in events["Records"]:
+        r = json.loads(event["body"])
+        _screenshot(**r)
 
+
+def _screenshot(
+    url, element_id, filename=None, output_bucket=BUCKET, output_basepath=BASEPATH
+):
+    capture_image(url, element_id)
+    filename = filename or get_hash()
+    save_image(output_bucket, output_basepath, filename)
+
+
+def save_image(bucket, basepath, filename):
+    args = {"ACL": "public-read", "ContentType": "image/png"}
+    (
+        boto3.resource("s3")
+        .Bucket(bucket)
+        .upload_file(ELEMENT, f"{basepath}/{filename}.png", ExtraArgs=args)
+    )
+
+
+def get_hash():
+    with open(ELEMENT, "rb") as f:
+        hasher = md5()
+        buf = f.read()
+        hasher.update(buf)
+        filename = hasher.hexdigest()
+    return filename
+
+
+def capture_image(url, element_id):
     driver = get_driver()
     driver.get(url)
 
-    element = driver.find_element_by_xpath(XPATH)
+    xpath = f"//*[@id='{element_id}']"
+    element = driver.find_element_by_xpath(xpath)
     location = element.location
     size = element.size
     driver.save_screenshot(SCREENSHOT)
@@ -63,27 +88,3 @@ def screenshot(events=None, context=None):
     im = Image.open(SCREENSHOT)
     im = im.crop((int(x), int(y), int(width), int(height)))
     im.save(ELEMENT)
-
-    with open(ELEMENT, "rb") as f:
-        hasher = md5()
-        buf = f.read()
-        hasher.update(buf)
-        filename = hasher.hexdigest()
-
-    args = {"ACL": "public-read", "ContentType": "image/png"}
-    (
-        boto3.resource("s3")
-        .Bucket(BUCKET)
-        .upload_file(ELEMENT, f"{BASEPATH}/{filename}.png", ExtraArgs=args)
-    )
-
-    body = {
-        "image_url": f"https://s3.amazonaws.com/{BUCKET}/{BASEPATH}/{filename}.png",
-        "source_url": url,
-        "xpath": XPATH,
-    }
-    if DEBUG is True:
-        body["debug"] = {"events": events}
-    return {"statusCode": 200, "body": json.dumps(body)}
-
-    return response

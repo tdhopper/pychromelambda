@@ -18,20 +18,32 @@ custom:
     useStaticCache: true
 
 functions:
-  screenshot:
+  sqs_screenshot:
     handler: chrome.screenshot
     exclude:
      - ./bin
      - ./node_modules
      - "*.zip"
     events:
-      - http:
-          path: img
-          method: post
-          private: false
+    #   - http:
+    #       path: img
+    #       method: get
+    #       private: true
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - MyQueue
+              - Arn
     layers:
        - {Ref: ChromeLambdaLayer}
        - {Ref: PythonRequirementsLambdaLayer}
+
+resources:
+  Resources:
+    MyQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "pychromelambda"
 
 layers:
   chrome:
